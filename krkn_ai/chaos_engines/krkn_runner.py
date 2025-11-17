@@ -164,8 +164,7 @@ class KrknRunner:
             # Generate env items
             env_list = ""
             for parameter in scenario.parameters:
-                # we use parameter.name instead of parameter.get_name() because krknhub uses parameter.name
-                env_list += f' -e {parameter.name}="{parameter.get_value()}" '
+                env_list += f' -e {parameter.get_name(return_krknhub_name=True)}="{parameter.get_value()}" '
 
             command = PODMAN_TEMPLATE.format(
                 env_list=env_list,
@@ -176,12 +175,9 @@ class KrknRunner:
         elif self.runner_type == KrknRunnerType.CLI_RUNNER:
             # Generate env parameters for scenario
             # krknctl the env parameter keys are small-casing, separated by hyphens
-            # by default we use upper-casing, separated by underscore.
             env_list = ""
             for parameter in scenario.parameters:
-                # TODO: This is a hack to make krknctl work. Probably need some unified naming convention for parameters.
-                # We use parameter.get_name() because krknctl names can be different from parameter.name which is used mainly in Krknhub
-                param_name = (parameter.get_name()).lower().replace("_", "-")
+                param_name = parameter.get_name(return_krknhub_name=False)
                 env_list += f'--{param_name} "{parameter.get_value()}" '
 
             command = KRKNCTL_TEMPLATE.format(
@@ -287,7 +283,11 @@ class KrknRunner:
 
     def __generate_scenario_json(self, scenario: Scenario, depends_on: str = None):
         # generate a json based on https://krkn-chaos.dev/docs/krknctl/randomized-chaos-testing/#example
-        env = {param.name: str(param.get_value()) for param in scenario.parameters}
+        # It uses krknhub env naming to define test parameters.
+        env = {
+            param.get_name(return_krknhub_name=True): str(param.get_value()) 
+            for param in scenario.parameters
+        }
         result = {
             "image": scenario.krknhub_image,
             "name": scenario.name,
