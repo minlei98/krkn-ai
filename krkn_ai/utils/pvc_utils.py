@@ -4,8 +4,9 @@ Utilities for working with PVCs, including getting real-time usage percentage.
 from typing import Optional, Dict, Tuple
 import time
 from krkn_lib.k8s.krkn_kubernetes import KrknKubernetes
-from krkn_lib.telemetry.ocp import KrknTelemetryOpenshift
+from krkn_lib.telemetry.k8s import KrknTelemetryKubernetes
 from krkn_ai.utils.logger import get_logger
+from krkn_lib.utils import SafeLogger
 
 logger = get_logger(__name__)
 
@@ -67,15 +68,12 @@ def get_pvc_usage_percentage(
             _logged_pvcs.discard(cache_key)
     
     try:
-        # Initialize krkn_lib telemetry API (following reference code pattern exactly)
-        from krkn_lib.utils import SafeLogger
-        from krkn_lib.ocp import KrknOpenshift
         
         safe_logger = SafeLogger()
-        lib_openshift = KrknOpenshift(kubeconfig_path=kubeconfig_path)
-        lib_telemetry = KrknTelemetryOpenshift(
+        lib_kubernetes = KrknKubernetes(kubeconfig_path=kubeconfig_path)
+        lib_telemetry = KrknTelemetryKubernetes(
             safe_logger=safe_logger,
-            lib_openshift=lib_openshift
+            lib_kubernetes=lib_kubernetes
         )
         
         # Find a pod that uses this PVC (we know pvc_name, need to find pod_name)

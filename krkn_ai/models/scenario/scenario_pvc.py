@@ -47,34 +47,31 @@ class PVCScenario(Scenario):
         namespace_pod_tuple: List[Tuple[Namespace, Pod]] = []  # (namespace, pod)
         
         for namespace in self._cluster_components.namespaces:
-            # Prefer PVCs if available
-            if namespace.pvcs and len(namespace.pvcs) > 0:
-                for pvc in namespace.pvcs:
-                    namespace_pvc_tuple.append((namespace, pvc))
-            # Fallback to pods
-            elif namespace.pods and len(namespace.pods) > 0:
-                for pod in namespace.pods:
-                    namespace_pod_tuple.append((namespace, pod))
+            if namespace.pvcs:
+                namespace_pvc_tuple.extend((namespace, pvc) for pvc in namespace.pvcs)
+            if namespace.pods:
+                namespace_pod_tuple.extend((namespace, pod) for pod in namespace.pods)
+        
+        # Check availability before mutation - skip test if no PVCs or pods found
+        if not namespace_pvc_tuple and not namespace_pod_tuple:
+            raise ScenarioParameterInitError("No PVCs or pods found in cluster components for PVC scenario")
         
         # Prefer PVCs
         selected_pvc_name = None
         selected_namespace = None
-        if len(namespace_pvc_tuple) > 0:
+        if namespace_pvc_tuple:
             namespace, pvc = rng.choice(namespace_pvc_tuple)
             self.namespace.value = namespace.name
             self.pvc_name.value = pvc.name
             self.pod_name.value = ""  # Leave empty when using pvc-name
             selected_pvc_name = pvc.name
             selected_namespace = namespace.name
-        elif len(namespace_pod_tuple) > 0:
-            # Fallback to pods
+        else:
             namespace, pod = rng.choice(namespace_pod_tuple)
             self.namespace.value = namespace.name
             self.pod_name.value = pod.name
             self.pvc_name.value = ""  # Leave empty when using pod-name
             selected_pvc_name = None
-        else:
-            raise ScenarioParameterInitError("No PVCs or pods found in cluster components for PVC scenario")
         
         min_usage = None
         if selected_pvc_name:
