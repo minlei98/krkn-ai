@@ -7,16 +7,23 @@ RUN dnf install -y \
     podman \
     python3.12 \
     python3-pip \
+    python3-devel \
+    gcc \
+    gcc-c++ \
+    make \
+    cmake \
     wget \
     tar \
+    git \
     && dnf clean all
 
 # Install krknctl
 ARG KRKNCTL_VERSION=v0.10.15-beta
-RUN wget -q https://github.com/krkn-chaos/krknctl/releases/download/${KRKNCTL_VERSION}/krknctl_Linux_x86_64.tar.gz \
-    && tar -xzf krknctl_Linux_x86_64.tar.gz -C /usr/local/bin/ krknctl \
+RUN wget -q https://github.com/krkn-chaos/krknctl/releases/download/${KRKNCTL_VERSION}/krknctl-${KRKNCTL_VERSION}-linux-amd64.tar.gz \
+    && tar -xzf krknctl-${KRKNCTL_VERSION}-linux-amd64.tar.gz \
+    && mv krknctl /usr/local/bin/krknctl \
     && chmod +x /usr/local/bin/krknctl \
-    && rm krknctl_Linux_x86_64.tar.gz
+    && rm -f krknctl-${KRKNCTL_VERSION}-linux-amd64.tar.gz LICENSE README.md
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
